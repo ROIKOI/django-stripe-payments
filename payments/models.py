@@ -492,7 +492,7 @@ class Customer(StripeObject):
         else:
             try:
                 sub_obj = self.current_subscription
-                sub_obj.plan = plan_from_stripe_id(sub.plan.id)
+                sub_obj.plan = sub.plan.id
                 sub_obj.current_period_start = convert_tstamp(
                     sub.current_period_start
                 )
@@ -509,7 +509,7 @@ class Customer(StripeObject):
             except CurrentSubscription.DoesNotExist:
                 sub_obj = CurrentSubscription.objects.create(
                     customer=self,
-                    plan=plan_from_stripe_id(sub.plan.id),
+                    plan=sub.plan.id,
                     current_period_start=convert_tstamp(
                         sub.current_period_start
                     ),
@@ -556,7 +556,7 @@ class Customer(StripeObject):
         if token:
             subscription_params["card"] = token
 
-        subscription_params["plan"] = PAYMENTS_PLANS[plan]["stripe_plan_id"]
+        subscription_params["plan"] = plan['stripe_plan_id']
         subscription_params["quantity"] = quantity
         subscription_params["coupon"] = coupon
         subscription_params["tax_percent"] = tax_percent
@@ -566,6 +566,8 @@ class Customer(StripeObject):
             # Refetch the stripe customer so we have the updated card info
             cu = self.stripe_customer
             self.save_card(cu)
+
+        cu.subscription.plan = plan
 
         self.sync_current_subscription(cu)
         if charge_immediately:
